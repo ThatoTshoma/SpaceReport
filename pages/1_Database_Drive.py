@@ -16,7 +16,7 @@ from google.oauth2 import service_account
 credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"]
 )
-client = bigquery.Client(credentials=credentials, project=credentials.spacereport-477420)
+client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
 st.set_page_config(page_title="Space Report", layout="wide")
 
