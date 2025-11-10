@@ -1,4 +1,3 @@
-# space_report.py — Disk Space Analysis Dashboard
 import streamlit as st
 from google.cloud import bigquery
 import os
@@ -10,9 +9,6 @@ from google.oauth2 import service_account
 
 
 
-# -------------------------------
-# BigQuery Setup
-# -------------------------------
 credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"]
 )
@@ -21,9 +17,6 @@ client = bigquery.Client(credentials=credentials, project=credentials.project_id
 st.set_page_config(page_title="Space Report", layout="wide")
 
 
-# -------------------------------
-# CSS / Styling with Bootstrap Icons
-# -------------------------------
 st.markdown("""
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
@@ -129,14 +122,12 @@ def get_latest_stats(df, selected_drives=None):
     if df.empty:
         return None
     
-    # Filter by selected drives if provided
     if selected_drives:
         df = df[df['Drive'].isin(selected_drives)]
     
     if df.empty:
         return None
     
-    # Get the most recent data for each drive
     latest = df.sort_values('Date', ascending=False).groupby('Drive').first().reset_index()
     
     total_size = latest['TotalSizeGB'].sum()
@@ -187,9 +178,6 @@ def get_border_color(free_percent):
     else:
         return '#51cf66'
 
-# -------------------------------
-# Main Dashboard
-# -------------------------------
 def main():
 
     
@@ -200,13 +188,10 @@ def main():
         st.warning("⚠️ No space report data available.")
         return
     
-    # Get date range for filters
     min_date, max_date = get_date_range(df)
     
-    # Get unique drives for filter
     all_drives = sorted(df['Drive'].unique().tolist())
     
-    # Filters
     st.markdown('<div class="section-header"><i class="bi bi-sliders"></i><h3>Filters</h3></div>', unsafe_allow_html=True)
     
     f1, f2, f3 = st.columns(3)
@@ -222,11 +207,9 @@ def main():
     with f3:
         st.markdown('<i class="bi bi-hdd"></i> **Select Drives**', unsafe_allow_html=True)
         selected_drives = st.multiselect("Drives", all_drives, default=all_drives, label_visibility="collapsed")
-    
-    # Filter data by date range
+
     filtered_df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
-    
-    # Filter by selected drives
+
     if selected_drives:
         filtered_df = filtered_df[filtered_df['Drive'].isin(selected_drives)]
     
@@ -234,14 +217,12 @@ def main():
         st.warning("⚠️ No data available for selected filters.")
         return
     
-    # Calculate stats based on filtered data
     stats = get_latest_stats(filtered_df, selected_drives)
     
     if stats is None:
         st.error("Unable to calculate statistics.")
         return
     
-    # Key Metrics
     st.markdown('<div class="section-header"><i class="bi bi-bar-chart-line"></i><h3>Key Metrics</h3></div>', unsafe_allow_html=True)
     
     m1, m2, m3, m4, m5 = st.columns(5)
@@ -293,7 +274,6 @@ def main():
     
     st.markdown("---")
     
-    # Tabs for different visualizations
     tab1, tab2, tab3, tab4 = st.tabs([
         "📈 Trends", 
         "💾 Drive Status", 
@@ -304,7 +284,6 @@ def main():
     with tab1:
         st.markdown('<div class="section-header"><i class="bi bi-graph-up-arrow"></i><h3>Space Usage Trends</h3></div>', unsafe_allow_html=True)
         
-        # Create trend chart for used space
         fig_trend = go.Figure()
         
         for drive in filtered_df['Drive'].unique():
@@ -327,7 +306,6 @@ def main():
         
         st.plotly_chart(fig_trend, use_container_width=True)
         
-        # Free space percentage trend
         st.markdown('<div class="section-header"><i class="bi bi-activity"></i><h3>Free Space Percentage Trend</h3></div>', unsafe_allow_html=True)
         
         fig_free = go.Figure()
@@ -342,7 +320,6 @@ def main():
                 hovertemplate='<b>%{fullData.name}</b><br>Date: %{x}<br>Free: %{y:.2f}%<extra></extra>'
             ))
         
-        # Add warning line at 10%
         fig_free.add_hline(y=10, line_dash="dash", line_color="red", 
                           annotation_text="Critical Threshold (10%)")
         
@@ -359,10 +336,8 @@ def main():
     with tab2:
         st.markdown('<div class="section-header"><i class="bi bi-hdd"></i><h3>Current Drive Status</h3></div>', unsafe_allow_html=True)
         
-        # Get latest status for each drive
         latest_status = stats['latest_data']
         
-        # Create comparison bar chart
         fig_bar = go.Figure()
         
         fig_bar.add_trace(go.Bar(
@@ -393,7 +368,6 @@ def main():
         
         st.plotly_chart(fig_bar, use_container_width=True)
         
-        # Detailed status cards
         st.markdown('<div class="section-header"><i class="bi bi-list-check"></i><h4>Drive Details</h4></div>', unsafe_allow_html=True)
         
         for _, row in latest_status.iterrows():
@@ -428,10 +402,8 @@ def main():
     
     with tab3:
 
-        # Space growth analysis
         st.markdown('<div class="section-header"><i class="bi bi-graph-up"></i><h3>Space Growth Analysis</h3></div>', unsafe_allow_html=True)
         
-        # Calculate growth rate for each selected drive in filtered date range
         growth_data = []
         for drive in selected_drives:
             drive_df = filtered_df[filtered_df['Drive'] == drive].sort_values('Date')
@@ -475,7 +447,6 @@ def main():
     with tab4:
         st.markdown('<div class="section-header"><i class="bi bi-table"></i><h3>All Space Report Data</h3></div>', unsafe_allow_html=True)
         
-        # Search functionality
         st.markdown('<i class="bi bi-search"></i> **Search Data**', unsafe_allow_html=True)
         search_query = st.text_input("Search", placeholder="Type to search...", label_visibility="collapsed")
         
@@ -485,7 +456,6 @@ def main():
             mask = display_df.apply(lambda row: row.astype(str).str.contains(search_query, case=False, na=False).any(), axis=1)
             display_df = display_df[mask]
         
-        # Format the dataframe for display
         display_df = display_df.sort_values('Date', ascending=False)
         display_df['Date'] = display_df['Date'].dt.strftime('%Y-%m-%d %H:%M')
         display_df['UsedSpaceGB'] = display_df['UsedSpaceGB'].round(2)
@@ -499,7 +469,6 @@ def main():
             hide_index=True
         )
         
-        # Status legend
         st.markdown("""
         <div style="margin-top: 1rem; padding: 1rem; background: #1e293b; border-radius: 10px;">
             <h4 style="color: white; margin-bottom: 1rem;"><i class="bi bi-info-circle"></i> Status Legend</h4>
