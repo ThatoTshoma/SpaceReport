@@ -11,9 +11,11 @@ import plotly.graph_objects as go
 # -------------------------------
 # BigQuery Setup
 # -------------------------------
-KeyPath = r"D:\WorkSpace\SpaceDriveReport\spacereport-477420-3296a937abf3.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KeyPath
-client = bigquery.Client()
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = bigquery.Client(credentials=credentials, project=credentials.project_id)
+
 
 st.set_page_config(page_title="Space Report", layout="wide")
 
