@@ -6,14 +6,22 @@ import pandas as pd
 from datetime import datetime, date
 import plotly.express as px
 import plotly.graph_objects as go
+from google.oauth2 import service_account
+
 
 
 # -------------------------------
 # BigQuery Setup
 # -------------------------------
-KeyPath = r"D:\WorkSpace\SpaceDriveReport\spacereport-477420-3296a937abf3.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KeyPath
-client = bigquery.Client()
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+
+# Initialize BigQuery client
+client = bigquery.Client(
+    credentials=credentials,
+    project=st.secrets["gcp_service_account"]["spacereport-477420"]
+)
 
 st.set_page_config(page_title="Space Report", layout="wide")
 
